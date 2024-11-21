@@ -14,6 +14,7 @@ int is_sorted(std::vector<int> vec){
     for (int i = 1; i < vec.size(); i++){
         if (prev > vec[i])
             return i;
+        prev = vec[i];
     }
     return -1;
 }
@@ -54,7 +55,5 @@ int main(int argc, char** argv){
     sort(insertion_sort, 50'000);
     std::cout << "Quicksort (singlethreaded):" << std::endl;
     sort(quicksort, 500'000);
-    std::cout << "Quicksort (multithreaded):" << std::endl;
-    sort(quicksort_multithreaded, 500'000);
     return 0;
 }
