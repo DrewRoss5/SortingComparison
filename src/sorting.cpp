@@ -101,11 +101,40 @@ void quicksort_multithreaded(std::vector<int>& arr){
     parallel_vec = arr;
     unsigned thread_count = std::thread::hardware_concurrency();
     std::vector<std::thread> threads;
+    // split the array into segments and sort each
+    std::vector<int> offsets;
     int segment_size = arr.size() / thread_count;
-    for (int i = 0; i < thread_count; i++)
-        threads.push_back(std::thread(&pivot_arr_multithread, segment_size * i, segment_size * (i + 1)));
+    for (int i = 0; i < thread_count; i++){
+        int offset = segment_size * i;
+        offsets.push_back(offset);
+        threads.push_back(std::thread(&pivot_arr_multithread, offset, segment_size * (i + 1)));
+
+    }
     for (int i = 0; i < thread_count; i++)
         threads[i].join();
-    arr = parallel_vec;
+    // combine the segments
+    arr.clear();
+    while (true){
+        int min_offeset = 0;
+        int min = std::numeric_limits<int>().max();
+        bool break_loop = true;
+        // find the minimum value
+        for (int i = 0; i < thread_count; i++){
+            if (offsets[i] < (segment_size * (i + 1))){
+                break_loop = false;
+                if (parallel_vec[offsets[i]] < min){
+                    min = parallel_vec[offsets[i]];
+                    min_offeset = i;
+                }
+            }
+        }
+        offsets[min_offeset]++;
+        if (break_loop)
+            break;
+        else
+            arr.push_back(min);
+    }
+
+
 
 }
