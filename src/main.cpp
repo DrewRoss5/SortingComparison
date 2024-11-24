@@ -31,5 +31,5 @@ int main(int argc, char** argv){
     std::cout << "Quicksort (singlethreaded):" << std::endl;
     sort(quicksort, 500'000);
     std::cout << "Quicksort (multithreaded):" << std::endl;
-    sort(quicksort_multithreaded, 500'000);
+    sort(quicksort_multithreaded, 1'000'000);
 }

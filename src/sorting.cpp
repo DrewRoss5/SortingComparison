@@ -2,6 +2,7 @@
 #include <vector>
 #include <limits>
 #include <thread>
+#include <functional>
 
 #include "sorting.hpp"
 
@@ -58,6 +59,46 @@ void insertion_sort(std::vector<int>& arr){
     }
 }
 
+// performs a simplified bucket sort using quicksort as the base
+void bucket_sort(std::vector<int>& arr, std::function<void(int, int)> sort){
+    parallel_vec = arr;
+    unsigned thread_count = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+    // split the array into segments and sort each
+    std::vector<int> offsets;
+    int segment_size = arr.size() / thread_count;
+    for (int i = 0; i < thread_count; i++){
+        int offset = segment_size * i;
+        offsets.push_back(offset);
+        threads.push_back(std::thread(sort, offset, segment_size * (i + 1)));
+
+    }
+    for (int i = 0; i < thread_count; i++)
+        threads[i].join();
+    // combine the segments
+    arr.clear();
+    while (true){
+        int min_offeset = 0;
+        int min = std::numeric_limits<int>().max();
+        bool break_loop = true;
+        // find the minimum value
+        for (int i = 0; i < thread_count; i++){
+            if (offsets[i] < (segment_size * (i + 1))){
+                break_loop = false;
+                if (parallel_vec[offsets[i]] < min){
+                    min = parallel_vec[offsets[i]];
+                    min_offeset = i;
+                }
+            }
+        }
+        offsets[min_offeset]++;
+        if (break_loop)
+            break;
+        else
+            arr.push_back(min);
+    }
+}
+
 void pivot_arr(std::vector<int>& arr, int start, int end){
     if (end - start <= 1)
         return;
@@ -96,45 +137,6 @@ void quicksort(std::vector<int>& arr){
     pivot_arr(arr, 0, arr.size());
 }
 
-// performs a simplified bucket sort using quicksort as the base
-void quicksort_multithreaded(std::vector<int>& arr){
-    parallel_vec = arr;
-    unsigned thread_count = std::thread::hardware_concurrency();
-    std::vector<std::thread> threads;
-    // split the array into segments and sort each
-    std::vector<int> offsets;
-    int segment_size = arr.size() / thread_count;
-    for (int i = 0; i < thread_count; i++){
-        int offset = segment_size * i;
-        offsets.push_back(offset);
-        threads.push_back(std::thread(&pivot_arr_multithread, offset, segment_size * (i + 1)));
-
-    }
-    for (int i = 0; i < thread_count; i++)
-        threads[i].join();
-    // combine the segments
-    arr.clear();
-    while (true){
-        int min_offeset = 0;
-        int min = std::numeric_limits<int>().max();
-        bool break_loop = true;
-        // find the minimum value
-        for (int i = 0; i < thread_count; i++){
-            if (offsets[i] < (segment_size * (i + 1))){
-                break_loop = false;
-                if (parallel_vec[offsets[i]] < min){
-                    min = parallel_vec[offsets[i]];
-                    min_offeset = i;
-                }
-            }
-        }
-        offsets[min_offeset]++;
-        if (break_loop)
-            break;
-        else
-            arr.push_back(min);
-    }
-
-
-
+void quicksort_multithreaded(std::vector<int>& nums){
+    bucket_sort(nums, pivot_arr_multithread);
 }
